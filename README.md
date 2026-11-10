@@ -12,6 +12,8 @@ issue when the model decays.**
 Project page: <https://aprameya-c-v.github.io/demand-forecasting-platform/> ·
 Monitoring dashboard: <https://aprameya-c-v.github.io/demand-forecasting-platform/dashboard/>
 
+![Monitoring dashboard](docs/screenshots/dashboard.png)
+
 ## What it does
 
 Predict trips per TLC zone per 30 minute slot for the next day, so dispatch can position supply.

@@ -46,9 +46,11 @@
   .kpi .v{font-size:31px;font-weight:700;letter-spacing:-.025em;margin-top:8px;font-variant-numeric:tabular-nums;line-height:1}
   .kpi .n{font-size:12.5px;color:var(--muted);margin-top:8px}
   .grid{display:grid;gap:12px;margin-top:12px}
-  .two{grid-template-columns:1.6fr 1fr}
-  .two-even{grid-template-columns:1fr 1fr}
-  @media(max-width:980px){.two,.two-even{grid-template-columns:1fr}}
+  .two{grid-template-columns:1.6fr 1fr;align-items:start}
+  .two-even{grid-template-columns:1fr 1fr;align-items:start}
+  .three{grid-template-columns:1fr 1fr 1fr;align-items:start}
+  @media(max-width:1100px){.three{grid-template-columns:1fr 1fr}}
+  @media(max-width:980px){.two,.two-even,.three{grid-template-columns:1fr}}
   .card-pad{padding:18px 20px}
   .card h2{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;font-weight:650}
   .card .hint{font-size:12.5px;color:var(--muted);margin:0 0 14px}
@@ -112,26 +114,26 @@
 
   <div class="kpis">
     <div class="card kpi"><div class="k">WAPE</div><div class="v" id="wape">·</div><div class="n" id="wape-note">gate at 38%</div></div>
-    <div class="card kpi"><div class="k">MAE</div><div class="v" id="mae">·</div><div class="n" id="mae-note">trips per slot</div></div>
+    <div class="card kpi"><div class="k">MAE</div><div class="v" id="mae">·</div><div class="n" id="mae-note">trips per 30 min slot</div></div>
     <div class="card kpi"><div class="k">Bias</div><div class="v" id="bias">·</div><div class="n">gate at ±10%</div></div>
     <div class="card kpi"><div class="k">Coverage p10–p90</div><div class="v" id="coverage">·</div><div class="n">nominal 80%</div></div>
   </div>
 
-  <div class="grid two">
+  <div class="grid" style="grid-template-columns:1fr">
     <div class="card card-pad">
       <h2>Forecast against realised demand</h2>
-      <p class="hint">Hourly trips, all zones, last 72 hours of the replay window.</p>
-      <svg id="chart" viewBox="0 0 760 260" preserveAspectRatio="none" aria-label="Forecast versus actual"></svg>
+      <p class="hint">Hourly trips, all 263 zones, last 72 hours of the replay window. The dashed line is the production model, the solid line is what happened.</p>
+      <svg id="chart" viewBox="0 0 1180 300" preserveAspectRatio="none" aria-label="Forecast versus actual"></svg>
       <div class="legend"><span><i class="a"></i>actual</span><span><i class="p"></i>forecast</span><span id="chart-scale"></span></div>
     </div>
+  </div>
+
+  <div class="grid three">
     <div class="card card-pad">
       <h2>Error by hour of day</h2>
       <p class="hint">WAPE per hour, held out window. Threshold 38%.</p>
       <div class="bars" id="hourly"></div>
     </div>
-  </div>
-
-  <div class="grid two-even">
     <div class="card card-pad">
       <h2>Feature drift</h2>
       <p class="hint">Population stability index against the training reference. Above 0.20 is drift.</p>
@@ -205,14 +207,13 @@ function render(data) {
   el("mae").textContent = num(metrics.mae);
   el("bias").textContent = (metrics.bias >= 0 ? "+" : "") + pct(metrics.bias);
   el("coverage").textContent = pct(metrics.coverage_p10_p90);
-  el("mae-note").textContent = (metrics.rows || 0).toLocaleString() + " held out points";
   el("wape-note").textContent = "gate at 38% · " + (metrics.rows || 0).toLocaleString() + " rows";
 
   drawChart(data.series || []);
 
   const hourly = metrics.by_hour || {};
   const entries = Object.entries(hourly).sort((a, b) => Number(a[0]) - Number(b[0]));
-  const max = Math.max(...entries.map(([, v]) => v), 0.001);
+  const max = Math.max(...entries.map(([, v]) => v), 0.5);
   el("hourly").innerHTML = entries.map(([h, v]) => {
     const width = Math.max(2, Math.round((v / max) * 100));
     const cls = v >= 0.38 ? "bad" : v >= 0.3 ? "warn" : "";
@@ -246,7 +247,7 @@ function render(data) {
 function drawChart(series) {
   const svg = el("chart");
   if (!series.length) { svg.innerHTML = ""; return; }
-  const W = 760, H = 260, L = 54, R = 12, T = 14, B = 30;
+  const W = 1180, H = 300, L = 58, R = 16, T = 18, B = 32;
   const actual = series.map((d) => d.actual);
   const predicted = series.map((d) => d.predicted);
   const maxY = Math.max(...actual, ...predicted) * 1.08;
