@@ -32,13 +32,34 @@ jobs:
         run: uv sync --frozen
 
       - name: Lint
-        run: uv run ruff check src tests
+        run: |
+          uv run ruff check src tests scripts
+          uv run ruff format --check src tests scripts
 
       - name: Types
         run: uv run mypy
 
       - name: Tests
-        run: uv run pytest --cov=demand_forecast --cov-report=term-missing
+        run: uv run pytest --cov=demand_forecast --cov-report=term-missing --cov-fail-under=85
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv sync --frozen
+
+      # a known advisory in a third party package should be visible, but it should not block a
+      # release that the team cannot fix. Remove continue-on-error once the tree is clean.
+      - name: Dependency audit
+        continue-on-error: true
+        run: uv run pip-audit --skip-editable
 
   pipeline-smoke:
     runs-on: ubuntu-latest

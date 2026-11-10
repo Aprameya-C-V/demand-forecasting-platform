@@ -80,7 +80,9 @@ def validate_panel(panel: pl.DataFrame, cfg: DataConfig) -> ValidationReport:
     if report.duplicates:
         report.failures.append(f"{report.duplicates} duplicate (ts, zone_id) rows")
     if report.zones != cfg.zone_max - cfg.zone_min + 1:
-        report.failures.append(f"expected {cfg.zone_max - cfg.zone_min + 1} zones, found {report.zones}")
+        report.failures.append(
+            f"expected {cfg.zone_max - cfg.zone_min + 1} zones, found {report.zones}"
+        )
     if report.rows and report.slots:
         expected = report.zones * report.slots
         report.gaps = expected - report.rows

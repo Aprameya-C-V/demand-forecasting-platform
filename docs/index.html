@@ -3,136 +3,258 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Demand Forecasting Service</title>
-<meta name="description" content="A production demand forecasting platform: scheduled retraining, a champion/challenger gate, a served forecast API, drift monitoring and automated alerts on GitHub Actions." />
+<title>Demand Forecasting Platform</title>
+<meta name="description" content="A production demand forecasting platform: validated data contracts, gated model promotion, a served forecast API with request level observability, and drift monitoring that files an issue on regression." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#f7f8fa; --panel:#ffffff; --line:#e3e7ec; --ink:#111a22; --muted:#5c6b78;
-    --accent:#1f6feb; --accent-soft:#eaf1fe; --ok:#177f4d; --warn:#b45309; --code:#f0f3f7;
+    --page:#f6f7f9; --card:#ffffff; --ink:#0d1520; --body:#33414f; --muted:#6b7a89;
+    --line:#e2e6eb; --line-strong:#cfd6de;
+    --accent:#1f4fd8; --accent-ink:#153aa3; --accent-soft:#eef2ff;
+    --ok:#0f7a4d; --ok-soft:#e8f6ee; --warn:#a8600a; --bad:#c0362c;
     --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --shadow:0 1px 2px rgba(13,21,32,.04), 0 8px 24px -16px rgba(13,21,32,.18);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.62 Inter,system-ui,sans-serif}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
   a{color:var(--accent);text-decoration:none}
   a:hover{text-decoration:underline}
-  .wrap{max-width:960px;margin:0 auto;padding:40px 24px 72px}
-  .top{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px;font-size:12px;font-family:var(--mono)}
-  .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 11px;color:var(--muted)}
-  h1{font-size:34px;line-height:1.15;letter-spacing:-.02em;margin:0 0 12px}
-  .lede{font-size:17px;color:var(--muted);max-width:70ch;margin:0 0 22px}
-  .links{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-  .btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:500;color:var(--ink)}
+  .shell{max-width:1060px;margin:0 auto;padding:0 24px}
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(246,247,249,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar .shell{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em}
+  .mark{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#5b8def);display:grid;place-items:center;color:#fff;font-size:11px;font-family:var(--mono)}
+  nav{display:flex;align-items:center;gap:22px;font-size:14px}
+  nav a{color:var(--body)}
+  nav a:hover{color:var(--ink);text-decoration:none}
+  .ver{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line-strong);border-radius:20px;padding:2px 8px}
+  @media(max-width:760px){nav a.opt{display:none}}
+  header.hero{padding:74px 0 30px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);border-radius:20px;padding:5px 12px;font-weight:600}
+  h1{font-size:52px;line-height:1.06;letter-spacing:-.032em;margin:20px 0 16px;font-weight:700;max-width:19ch}
+  @media(max-width:760px){h1{font-size:36px}}
+  .lede{font-size:19px;color:var(--body);max-width:62ch;margin:0 0 26px}
+  .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);border-radius:9px;padding:11px 16px;font-size:14px;font-weight:560;box-shadow:var(--shadow)}
+  .btn:hover{text-decoration:none;border-color:var(--ink)}
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  h2{font-size:20px;margin:44px 0 14px;letter-spacing:-.01em}
-  h3{font-size:15px;margin:24px 0 8px}
-  p{margin:0 0 12px}
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0}
-  @media(max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}h1{font-size:28px}}
-  .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .tile .v{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-  .tile .k{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
-  .tile .n{font-size:12px;color:var(--muted);margin-top:6px}
-  .flow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto}
-  .flow ol{display:flex;gap:10px;list-style:none;margin:0;padding:0;min-width:720px}
-  .flow li{flex:1;border:1px solid var(--line);border-radius:10px;padding:12px;background:#fbfcfe;font-size:13px}
-  .flow li b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:6px}
-  .flow li span{color:var(--muted)}
-  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
-  th{background:#fbfcfe;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .btn.primary:hover{background:var(--accent-ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line);background:var(--card);border-radius:6px;padding:4px 9px}
+  .strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:36px 0 10px}
+  @media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--card);padding:20px 18px}
+  .stat .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .stat .v{font-size:29px;font-weight:700;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums}
+  .stat .n{font-size:12.5px;color:var(--muted);margin-top:4px}
+  section{padding:44px 0}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600}
+  h2{font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:650}
+  .sec-lede{color:var(--body);max-width:70ch;margin:6px 0 22px;font-size:16.5px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .diagram{padding:22px}
+  .diagram svg{width:100%;height:auto;display:block}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 16px;border-bottom:1px solid var(--line);background:#fbfcfd}
+  td{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--body)}
   tr:last-child td{border-bottom:none}
-  td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  td.num{font-family:var(--mono);text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
   .good{color:var(--ok);font-weight:600}
-  code{font-family:var(--mono);font-size:13px;background:var(--code);padding:1px 5px;border-radius:4px}
-  pre{background:#0e1418;color:#e8eef2;padding:16px 18px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6}
-  .note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px}
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:760px){.cards{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px}
-  .card b{display:block;margin-bottom:4px}
-  footer{margin-top:52px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+  .card .icon{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:12px}
+  .card b{display:block;font-size:15px;margin-bottom:5px;letter-spacing:-.01em}
+  .card p{margin:0;font-size:13.5px;color:var(--body)}
+  pre{background:#0b1220;color:#dbe4f0;border-radius:12px;padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.75;margin:0}
+  pre .c{color:#7f93ad}
+  code{font-family:var(--mono);font-size:13px;background:#eef1f5;border-radius:5px;padding:1.5px 6px}
+  .split{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+  @media(max-width:860px){.split{grid-template-columns:1fr}}
+  .kv{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .kv:last-child{border-bottom:none}
+  .kv span:first-child{color:var(--muted)}
+  .kv span:last-child{font-family:var(--mono);font-size:13px}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:28px 0 60px;color:var(--muted);font-size:13.5px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <span class="chip">Python 3.12</span>
-    <span class="chip">LightGBM 4.7</span>
-    <span class="chip">FastAPI</span>
-    <span class="chip">GitHub Actions</span>
-    <span class="chip">free tiers only</span>
+
+<div class="topbar">
+  <div class="shell">
+    <div class="brand"><span class="mark">df</span> Demand Forecasting</div>
+    <nav>
+      <a class="opt" href="#system">System</a>
+      <a class="opt" href="#results">Results</a>
+      <a class="opt" href="#api">API</a>
+      <a href="dashboard/index.html">Dashboard</a>
+      <a class="btn" style="padding:7px 12px" href="https://github.com/Aprameya-C-V/demand-forecasting-platform">Repository</a>
+    </nav>
   </div>
+</div>
 
-  <h1>Demand Forecasting Service</h1>
-  <p class="lede">An end to end forecasting system for NYC taxi demand: scheduled retraining, a champion/challenger gate before anything reaches production, a served forecast API, and monitoring that opens an issue when the model decays. Every stage runs in CI.</p>
+<div class="shell">
+  <header class="hero">
+    <span class="eyebrow">MLOps reference implementation</span>
+    <h1>Forecasts that stay honest after deployment.</h1>
+    <p class="lede">A demand forecasting platform for NYC taxi data. Contracts validate the input, a gate decides what reaches production, the API reports on itself, and a monitor files a ticket when the model starts to slip.</p>
+    <div class="cta">
+      <a class="btn primary" href="dashboard/index.html">Open monitoring dashboard</a>
+      <a class="btn" href="https://github.com/Aprameya-C-V/demand-forecasting-platform/blob/main/docs/RUNBOOK.md">Runbook</a>
+      <a class="btn" href="https://github.com/Aprameya-C-V/demand-forecasting-platform/blob/main/docs/MODEL_CARD.md">Model card</a>
+    </div>
+    <div class="chips">
+      <span class="chip">Python 3.12</span>
+      <span class="chip">LightGBM</span>
+      <span class="chip">FastAPI</span>
+      <span class="chip">GitHub Actions</span>
+      <span class="chip">66 tests</span>
+      <span class="chip">mypy strict</span>
+    </div>
 
-  <div class="links">
-    <a class="btn primary" href="dashboard/index.html">Live monitoring dashboard</a>
-    <a class="btn" href="https://github.com/Aprameya-C-V/demand-forecasting-platform">Repository</a>
-    <a class="btn" href="https://github.com/Aprameya-C-V/demand-forecasting-platform/blob/main/docs/RUNBOOK.md">Runbook</a>
-    <a class="btn" href="https://github.com/Aprameya-C-V/demand-forecasting-platform/blob/main/docs/MODEL_CARD.md">Model card</a>
-  </div>
+    <div class="strip">
+      <div class="stat"><div class="k">WAPE, holdout</div><div class="v">21.8%</div><div class="n">14 days, 176,736 rows</div></div>
+      <div class="stat"><div class="k">Interval coverage</div><div class="v">79.4%</div><div class="n">p10 to p90, nominal 80%</div></div>
+      <div class="stat"><div class="k">p99 serve latency</div><div class="v">4.3 ms</div><div class="n">one client, 48 slot forecast</div></div>
+      <div class="stat"><div class="k">Throughput</div><div class="v">570 <span style="font-size:15px;font-weight:500">req/s</span></div><div class="n">4 concurrent clients, one process</div></div>
+      <div class="stat"><div class="k">Infrastructure cost</div><div class="v">$0</div><div class="n">free tiers only</div></div>
+    </div>
+  </header>
 
-  <div class="tiles">
-    <div class="tile"><div class="k">WAPE, held out 14 days</div><div class="v">21.8%</div><div class="n">weighted absolute percentage error</div></div>
-    <div class="tile"><div class="k">Interval coverage</div><div class="v">79.4%</div><div class="n">p10 to p90 band, nominal 80%</div></div>
-    <div class="tile"><div class="k">Panel</div><div class="v">1.84M</div><div class="n">zone-slot rows, 263 zones, 146 days</div></div>
-    <div class="tile"><div class="k">Serve latency</div><div class="v">5 ms</div><div class="n">48 slot forecast, warm process</div></div>
-  </div>
+  <section id="system">
+    <div class="sec-head"><span class="num">01</span><h2>The system</h2></div>
+    <p class="sec-lede">Five stages, one repository, no always-on infrastructure. Every arrow below runs as a command locally and as a workflow in CI.</p>
+    <div class="panel diagram">
+      <svg viewBox="0 0 980 300" role="img" aria-label="Pipeline from TLC data to monitoring">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#98a6b5"/>
+          </marker>
+          <style>
+            .box{fill:#fff;stroke:#d5dbe3;stroke-width:1.2;rx:10}
+            .box-hi{fill:#eef2ff;stroke:#b9c8f5}
+            .t{font:600 13px Inter,sans-serif;fill:#0d1520}
+            .s{font:400 11.5px Inter,sans-serif;fill:#6b7a89}
+            .m{font:500 11px "JetBrains Mono",monospace;fill:#1f4fd8}
+            .ln{stroke:#98a6b5;stroke-width:1.3;fill:none;marker-end:url(#arrow)}
+            .ln-dash{stroke:#b9c8f5;stroke-width:1.3;fill:none;stroke-dasharray:5 4;marker-end:url(#arrow)}
+          </style>
+        </defs>
 
-  <h2>How it runs</h2>
-  <div class="flow">
-    <ol>
-      <li><b>Ingest</b><span>Monthly TLC parquet, checksummed and recorded in a manifest.</span></li>
-      <li><b>Validate</b><span>Panel contract: dense zone-slot grid, no nulls, no negative counts. Fails the pipeline on a gap.</span></li>
-      <li><b>Train</b><span>Time based split, LightGBM point model plus p10 and p90 quantile models, early stopping on a validation window.</span></li>
-      <li><b>Gate</b><span>Registered version replaces production only if WAPE improves by at least 2%. Otherwise it is kept as a challenger.</span></li>
-      <li><b>Serve</b><span>FastAPI: health, readiness, model metadata, zone forecasts, Prometheus metrics, every request logged.</span></li>
-      <li><b>Monitor</b><span>Replays realised demand, computes WAPE, bias and PSI per feature, then opens a GitHub issue when a gate breaks.</span></li>
-    </ol>
-  </div>
+        <rect class="box" x="8" y="70" width="160" height="78" rx="10"/>
+        <text class="t" x="24" y="98">NYC TLC</text>
+        <text class="s" x="24" y="118">monthly parquet</text>
+        <text class="s" x="24" y="134">+ SHA-256 manifest</text>
 
-  <h2>Results</h2>
-  <p>Held out window: 17 to 30 September 2026, 176,736 zone-slot rows. One run, no tuning on the test window.</p>
-  <table>
-    <thead><tr><th>Metric</th><th>Value</th><th>Reading</th></tr></thead>
-    <tbody>
-      <tr><td>WAPE</td><td class="num">0.218</td><td>total absolute error over total demand</td></tr>
-      <tr><td>MAE</td><td class="num">2.32</td><td>trips per 30 minute slot, across 263 zones</td></tr>
-      <tr><td>RMSE</td><td class="num">6.92</td><td>heavy tail from a few high volume zones</td></tr>
-      <tr><td>Bias</td><td class="num">-2.5%</td><td class="good">slightly under-forecasting, inside the 10% gate</td></tr>
-      <tr><td>Coverage p10-p90</td><td class="num">0.794</td><td class="good">nominal 80%, so the band is calibrated</td></tr>
-      <tr><td>Max PSI</td><td class="num">0.017</td><td class="good">no drift between training reference and served window</td></tr>
-    </tbody>
-  </table>
+        <rect class="box" x="205" y="52" width="160" height="114" rx="10"/>
+        <text class="t" x="221" y="78">Panel contract</text>
+        <text class="s" x="221" y="98">dense zone x slot</text>
+        <text class="s" x="221" y="116">no nulls, no gaps</text>
+        <text class="m" x="221" y="144">forecast panel</text>
 
-  <p style="margin-top:14px">Error is not uniform. WAPE runs at 17.6% in the evening peak and 44.4% at 04:00, where volumes are small and a handful of trips move the ratio. The dashboard shows the hourly profile.</p>
+        <rect class="box" x="402" y="52" width="160" height="114" rx="10"/>
+        <text class="t" x="418" y="78">Training</text>
+        <text class="s" x="418" y="98">time split, lags</text>
+        <text class="s" x="418" y="116">p50, p10, p90</text>
+        <text class="m" x="418" y="144">forecast train</text>
 
-  <h2>What makes it a platform</h2>
-  <div class="cards">
-    <div class="card"><b>Promotion is a gate, not a habit</b>A challenger is registered on every training run but replaces production only when it beats the champion by the configured margin. The alias, not the code, decides what serves.</div>
-    <div class="card"><b>Monitoring has teeth</b>The scheduled workflow fails on a WAPE, bias or PSI breach and opens a GitHub issue with the numbers, so a regression is a tracked ticket rather than a dashboard nobody reads.</div>
-    <div class="card"><b>Contracts before models</b>The panel is validated before training: wrong zone count, duplicate rows or a missing slot stops the run. A silent gap in the panel would corrupt every lag.</div>
-    <div class="card"><b>One code path for train and serve</b>Feature engineering reshapes the dense panel into a cube, so the served lag is computed by the same function that trained it.</div>
-  </div>
+        <rect class="box box-hi" x="599" y="52" width="160" height="114" rx="10"/>
+        <text class="t" x="615" y="78">Registry gate</text>
+        <text class="s" x="615" y="98">champion vs challenger</text>
+        <text class="s" x="615" y="116">2% WAPE margin</text>
+        <text class="m" x="615" y="144">production alias</text>
 
-  <h2>Reproduce</h2>
-  <pre>uv venv &amp;&amp; uv sync
-uv run forecast fetch          # download the published TLC months
-uv run forecast panel          # aggregate and validate to data/processed/panel.parquet
-uv run forecast train          # train, register, promote if the gate passes
-uv run forecast monitor        # replay realised demand, write reports and dashboard data
-uv run forecast serve          # http://127.0.0.1:8000/docs</pre>
+        <rect class="box" x="796" y="70" width="170" height="78" rx="10"/>
+        <text class="t" x="812" y="98">Forecast API</text>
+        <text class="s" x="812" y="118">FastAPI, Prometheus</text>
+        <text class="s" x="812" y="134">request IDs, JSON logs</text>
 
-  <h2>Limits</h2>
-  <p>One run per configuration, so only large differences are claimed. Synthetic-free but aggregate-only data: no weather, events or road closures, which is the obvious next feature source. The panel ends at the last published month, so the API forecasts one day ahead rather than recursively for a week. Cost of serving is not measured.</p>
+        <rect class="box" x="402" y="212" width="357" height="72" rx="10"/>
+        <text class="t" x="418" y="238">Monitoring</text>
+        <text class="s" x="418" y="256">WAPE, bias, PSI · opens an issue on a breach</text>
+        <text class="m" x="700" y="256">forecast monitor</text>
+
+        <path class="ln" d="M 168 109 L 200 109"/>
+        <path class="ln" d="M 365 109 L 397 109"/>
+        <path class="ln" d="M 562 109 L 594 109"/>
+        <path class="ln" d="M 759 109 L 791 109"/>
+        <path class="ln-dash" d="M 880 152 L 880 248 L 764 248"/>
+        <path class="ln-dash" d="M 402 248 L 295 248 L 295 170"/>
+        <text class="s" x="612" y="284">a breach re-enters the pipeline as a retraining trigger</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="sec-head"><span class="num">02</span><h2>Results</h2></div>
+    <p class="sec-lede">Held out window, 17 to 30 September 2026. One run per configuration, no tuning on the test window. Errors below the 5% noise floor are not claimed.</p>
+    <div class="panel" style="overflow:hidden">
+      <table>
+        <thead><tr><th>Metric</th><th style="text-align:right">Value</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td>WAPE</td><td class="num">0.218</td><td>total absolute error over total demand</td></tr>
+          <tr><td>MAE</td><td class="num">2.32</td><td>trips per 30 minute slot</td></tr>
+          <tr><td>RMSE</td><td class="num">6.92</td><td>heavy tail from high volume zones</td></tr>
+          <tr><td>Bias</td><td class="num">−2.5%</td><td class="good">inside the ±10% gate</td></tr>
+          <tr><td>Coverage p10–p90</td><td class="num">0.794</td><td class="good">nominal 0.80, band is calibrated</td></tr>
+          <tr><td>Max PSI</td><td class="num">0.017</td><td class="good">no drift against the training reference</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:13.5px;margin-top:12px">WAPE by hour runs from 17.6% at 18:00 to 44.4% at 04:00, where a handful of trips moves the ratio. The dashboard carries the profile.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="num">03</span><h2>What makes it production</h2></div>
+    <div class="grid" style="margin-top:18px">
+      <div class="card"><div class="icon">01</div><b>Promotion is a gate</b><p>Every retrain is registered, but only a challenger that beats the champion by 2% WAPE takes the production alias. The alias decides what serves, not the code.</p></div>
+      <div class="card"><div class="icon">02</div><b>Monitoring has teeth</b><p>A breach fails the workflow and opens a GitHub issue with the metric, the window and the runbook section. Regressions become tickets, not dashboards.</p></div>
+      <div class="card"><div class="icon">03</div><b>Contracts before models</b><p>The panel is validated for density, nulls, duplicates and zone count before training. A silently missing slot would corrupt every lag above it.</p></div>
+      <div class="card"><div class="icon">04</div><b>Observability by default</b><p>Request ID, model version and latency on every response and in every log line. Prometheus counters, a latency histogram and a batch size histogram.</p></div>
+      <div class="card"><div class="icon">05</div><b>Rollback is one line</b><p>Aliases are data. Point production at a previous version, redeploy, confirm with the version header. No rebuild, no migration.</p></div>
+      <div class="card"><div class="icon">06</div><b>One feature path</b><p>Training and serving reshape the same dense panel into the same cube, so a served lag cannot drift from a trained one.</p></div>
+    </div>
+  </section>
+
+  <section id="api">
+    <div class="sec-head"><span class="num">04</span><h2>API and operation</h2></div>
+    <div class="split" style="margin-top:18px">
+      <pre><span class="c"># forecast one zone, one day</span>
+curl "localhost:8000/v1/zones/161/forecast?slots=48"
+
+<span class="c"># batch, all zones, no band</span>
+curl -X POST localhost:8000/v1/forecast/batch \
+  -H 'content-type: application/json' \
+  -d '{"slots":48,"quantiles":false}'
+
+<span class="c"># what is deployed and what it scored</span>
+curl localhost:8000/v1/model
+
+<span class="c"># operational surface</span>
+curl localhost:8000/healthz localhost:8000/readyz
+curl localhost:8000/metrics | grep forecast_</pre>
+      <div class="panel" style="padding:18px 20px">
+        <div class="kv"><span>Health</span><span>/healthz</span></div>
+        <div class="kv"><span>Readiness</span><span>/readyz</span></div>
+        <div class="kv"><span>Model metadata</span><span>/v1/model</span></div>
+        <div class="kv"><span>Single forecast</span><span>/v1/zones/{id}/forecast</span></div>
+        <div class="kv"><span>Batch (50 zones)</span><span>/v1/forecast/batch</span></div>
+        <div class="kv"><span>Metrics</span><span>/metrics</span></div>
+        <div class="kv"><span>Retrain</span><span>train.yml, monthly</span></div>
+        <div class="kv"><span>Monitor</span><span>monitor.yml, daily</span></div>
+        <div class="kv"><span>Rollback</span><span>alias + redeploy</span></div>
+      </div>
+    </div>
+  </section>
 
   <footer>
-    <span>Personal project. Built on the NYC TLC open data, LightGBM and FastAPI.</span>
-    <span><a href="dashboard/index.html">Monitoring dashboard</a></span>
+    <span>Personal project. Built on NYC TLC open data, LightGBM and FastAPI.</span>
+    <span><a href="dashboard/index.html">Monitoring dashboard</a> · <a href="https://github.com/Aprameya-C-V/demand-forecasting-platform">Source</a></span>
   </footer>
 </div>
 </body>

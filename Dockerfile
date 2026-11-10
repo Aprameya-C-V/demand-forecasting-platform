@@ -28,7 +28,8 @@ RUN uv sync --frozen --no-dev
 ENV DF_DATA_DIR=/app/data \
     DF_MODEL_DIR=/app/models \
     DF_PANEL_PATH=/app/data/processed/panel.parquet \
-    DF_PREDICTION_LOG=/app/data/predictions/predictions.jsonl
+    DF_PREDICTION_LOG=/app/data/predictions/predictions.jsonl \
+    DF_WORKERS=2
 
 RUN useradd --create-home --uid 1000 app && mkdir -p /app/data /app/models && chown -R app /app
 USER 1000

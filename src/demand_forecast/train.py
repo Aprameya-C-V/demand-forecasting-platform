@@ -196,7 +196,10 @@ def train(
         name = f"model_q{int(quantile * 100):02d}"
         model.save_model(str(artefact_dir / f"{name}.txt"))
         bands[name] = np.asarray(model.predict(X[test_mask]), dtype=float)
-        quantile_metrics[name] = {"alpha": quantile, "best_iteration": int(model.best_iteration or 0)}
+        quantile_metrics[name] = {
+            "alpha": quantile,
+            "best_iteration": int(model.best_iteration or 0),
+        }
 
     lower = bands.get("model_q10")
     upper = bands.get("model_q90")
@@ -215,7 +218,8 @@ def train(
     importance = point.feature_importance(importance_type="gain")
     total = float(importance.sum()) or 1.0
     feature_importance = {
-        name: round(float(gain) / total, 4) for name, gain in zip(matrix.names, importance, strict=True)
+        name: round(float(gain) / total, 4)
+        for name, gain in zip(matrix.names, importance, strict=True)
     }
 
     metadata: dict[str, Any] = {

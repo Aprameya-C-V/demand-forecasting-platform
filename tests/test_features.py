@@ -23,7 +23,9 @@ def _panel(days: int = 10, zones: int = 2) -> pl.DataFrame:
                         "trips": zone * 100 + day + slot,
                     }
                 )
-    return pl.DataFrame(rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32})
+    return pl.DataFrame(
+        rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32}
+    )
 
 
 def test_weekday_of() -> None:

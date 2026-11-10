@@ -17,7 +17,13 @@ from demand_forecast.data.aggregate import build_panel, write_panel
 from demand_forecast.data.fetch import fetch_all
 from demand_forecast.data.validate import DataValidationError, validate_panel
 from demand_forecast.features import build_matrix
-from demand_forecast.monitor import drift_report, metrics_report, monitor
+from demand_forecast.monitor import (
+    drift_report,
+    hourly_series,
+    metrics_report,
+    monitor,
+    zone_breakdown,
+)
 from demand_forecast.registry import ModelRegistry
 from demand_forecast.train import train
 
@@ -84,7 +90,9 @@ def cmd_train(args: argparse.Namespace) -> int:
         "champion_before": champion.version if champion else None,
         "challenger": result.as_dict(),
     }
-    (settings.paths.report_dir / "train_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    (settings.paths.report_dir / "train_summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
     print(json.dumps(summary, indent=2))
     return 0
 
@@ -93,9 +101,13 @@ def cmd_monitor(args: argparse.Namespace) -> int:
     from demand_forecast.serve.predictor import Predictor
 
     settings, cfg = _settings(args.config)
-    predictor = Predictor(settings.paths.model_dir, settings.paths.panel_path, alias=cfg.registry.alias)
+    predictor = Predictor(
+        settings.paths.model_dir, settings.paths.panel_path, alias=cfg.registry.alias
+    )
     window = predictor.replay(args.days)
-    metrics = metrics_report(window.ts, window.y, window.y_hat, lower=window.lower, upper=window.upper)
+    metrics = metrics_report(
+        window.ts, window.y, window.y_hat, lower=window.lower, upper=window.upper
+    )
     drift = drift_report(
         predictor.reference,
         window.features,
@@ -112,7 +124,12 @@ def cmd_monitor(args: argparse.Namespace) -> int:
     payload = report.model_dump(mode="json")
     settings.paths.report_dir.mkdir(parents=True, exist_ok=True)
     (settings.paths.report_dir / "monitor.json").write_text(json.dumps(payload, indent=2) + "\n")
-    _write_dashboard_data(payload, predictor.model_info().model_dump(mode="json"))
+    _write_dashboard_data(
+        payload,
+        predictor.model_info().model_dump(mode="json"),
+        series=hourly_series(window),
+        zones=zone_breakdown(window),
+    )
 
     print(json.dumps({"passed": report.passed, "alerts": report.alerts}, indent=2))
     if not report.passed and not args.exit_zero:
@@ -120,13 +137,21 @@ def cmd_monitor(args: argparse.Namespace) -> int:
     return 0
 
 
-def _write_dashboard_data(report: dict[str, object], model: dict[str, object]) -> None:
+def _write_dashboard_data(
+    report: dict[str, object],
+    model: dict[str, object],
+    *,
+    series: list[dict[str, object]] | None = None,
+    zones: list[dict[str, object]] | None = None,
+) -> None:
     dashboard_dir = Path(os.environ.get("DF_DASHBOARD_DIR", "docs/dashboard"))
     dashboard_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "model": model,
         "report": report,
+        "series": series or [],
+        "zones": zones or [],
         "source": "monitor replay over realised demand",
     }
     (dashboard_dir / "data.json").write_text(json.dumps(payload, indent=2) + "\n")
@@ -140,6 +165,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         host=args.host,
         port=args.port,
         log_level=args.log_level,
+        workers=int(os.environ.get("DF_WORKERS", args.workers)),
         reload=False,
     )
     return 0
@@ -163,9 +189,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("fetch", parents=[common], help="download the published TLC files").set_defaults(
         func=cmd_fetch
     )
-    sub.add_parser("panel", parents=[common], help="aggregate and validate the zone-slot panel").set_defaults(
-        func=cmd_panel
-    )
+    sub.add_parser(
+        "panel", parents=[common], help="aggregate and validate the zone-slot panel"
+    ).set_defaults(func=cmd_panel)
 
     train_parser = sub.add_parser(
         "train", parents=[common], help="train, register and maybe promote a model"
@@ -185,6 +211,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--host", default="0.0.0.0")
     serve_parser.add_argument("--port", type=int, default=8000)
     serve_parser.add_argument("--log-level", default="info")
+    serve_parser.add_argument("--workers", type=int, default=1, help="uvicorn worker processes")
     serve_parser.set_defaults(func=cmd_serve)
 
     pipeline_parser = sub.add_parser(

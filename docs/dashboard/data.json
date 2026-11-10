@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T19:17:53+00:00",
+  "generated_at": "2026-11-10T19:22:46+00:00",
   "model": {
     "version": "20261110-190926-4b2fbdb99ff3",
     "alias": "production",
@@ -35,7 +35,7 @@
     }
   },
   "report": {
-    "generated_at": "2026-11-10T19:17:53.859447Z",
+    "generated_at": "2026-11-10T19:22:46.057023Z",
     "model_version": "20261110-190926-4b2fbdb99ff3",
     "metrics": {
       "window_start": "2026-09-17T00:00:00Z",
@@ -109,5 +109,409 @@
     "alerts": [],
     "passed": true
   },
+  "series": [
+    {
+      "hour": "2026-09-28 00",
+      "actual": 2061.0,
+      "predicted": 2259.9
+    },
+    {
+      "hour": "2026-09-28 01",
+      "actual": 893.0,
+      "predicted": 1179.9
+    },
+    {
+      "hour": "2026-09-28 02",
+      "actual": 459.0,
+      "predicted": 690.3
+    },
+    {
+      "hour": "2026-09-28 03",
+      "actual": 328.0,
+      "predicted": 503.7
+    },
+    {
+      "hour": "2026-09-28 04",
+      "actual": 540.0,
+      "predicted": 675.0
+    },
+    {
+      "hour": "2026-09-28 05",
+      "actual": 1445.0,
+      "predicted": 1272.9
+    },
+    {
+      "hour": "2026-09-28 06",
+      "actual": 3279.0,
+      "predicted": 2537.4
+    },
+    {
+      "hour": "2026-09-28 07",
+      "actual": 5616.0,
+      "predicted": 4160.8
+    },
+    {
+      "hour": "2026-09-28 08",
+      "actual": 6726.0,
+      "predicted": 5131.1
+    },
+    {
+      "hour": "2026-09-28 09",
+      "actual": 6323.0,
+      "predicted": 4896.3
+    },
+    {
+      "hour": "2026-09-28 10",
+      "actual": 5614.0,
+      "predicted": 4821.5
+    },
+    {
+      "hour": "2026-09-28 11",
+      "actual": 5572.0,
+      "predicted": 5062.1
+    },
+    {
+      "hour": "2026-09-28 12",
+      "actual": 5358.0,
+      "predicted": 5322.6
+    },
+    {
+      "hour": "2026-09-28 13",
+      "actual": 5609.0,
+      "predicted": 5339.0
+    },
+    {
+      "hour": "2026-09-28 14",
+      "actual": 6209.0,
+      "predicted": 5965.7
+    },
+    {
+      "hour": "2026-09-28 15",
+      "actual": 6828.0,
+      "predicted": 6397.3
+    },
+    {
+      "hour": "2026-09-28 16",
+      "actual": 7041.0,
+      "predicted": 6708.2
+    },
+    {
+      "hour": "2026-09-28 17",
+      "actual": 7736.0,
+      "predicted": 7457.0
+    },
+    {
+      "hour": "2026-09-28 18",
+      "actual": 7960.0,
+      "predicted": 7466.2
+    },
+    {
+      "hour": "2026-09-28 19",
+      "actual": 7010.0,
+      "predicted": 6762.3
+    },
+    {
+      "hour": "2026-09-28 20",
+      "actual": 6799.0,
+      "predicted": 6513.6
+    },
+    {
+      "hour": "2026-09-28 21",
+      "actual": 6573.0,
+      "predicted": 6275.2
+    },
+    {
+      "hour": "2026-09-28 22",
+      "actual": 4978.0,
+      "predicted": 5378.1
+    },
+    {
+      "hour": "2026-09-28 23",
+      "actual": 3327.0,
+      "predicted": 3770.9
+    },
+    {
+      "hour": "2026-09-29 00",
+      "actual": 1738.0,
+      "predicted": 2323.8
+    },
+    {
+      "hour": "2026-09-29 01",
+      "actual": 922.0,
+      "predicted": 1047.4
+    },
+    {
+      "hour": "2026-09-29 02",
+      "actual": 426.0,
+      "predicted": 549.6
+    },
+    {
+      "hour": "2026-09-29 03",
+      "actual": 306.0,
+      "predicted": 372.4
+    },
+    {
+      "hour": "2026-09-29 04",
+      "actual": 396.0,
+      "predicted": 474.2
+    },
+    {
+      "hour": "2026-09-29 05",
+      "actual": 998.0,
+      "predicted": 1129.1
+    },
+    {
+      "hour": "2026-09-29 06",
+      "actual": 2332.0,
+      "predicted": 2757.3
+    },
+    {
+      "hour": "2026-09-29 07",
+      "actual": 4934.0,
+      "predicted": 5194.9
+    },
+    {
+      "hour": "2026-09-29 08",
+      "actual": 6450.0,
+      "predicted": 6386.9
+    },
+    {
+      "hour": "2026-09-29 09",
+      "actual": 6008.0,
+      "predicted": 5978.5
+    },
+    {
+      "hour": "2026-09-29 10",
+      "actual": 5504.0,
+      "predicted": 5547.8
+    },
+    {
+      "hour": "2026-09-29 11",
+      "actual": 5493.0,
+      "predicted": 5619.4
+    },
+    {
+      "hour": "2026-09-29 12",
+      "actual": 5862.0,
+      "predicted": 5746.3
+    },
+    {
+      "hour": "2026-09-29 13",
+      "actual": 6042.0,
+      "predicted": 5871.2
+    },
+    {
+      "hour": "2026-09-29 14",
+      "actual": 6773.0,
+      "predicted": 6548.7
+    },
+    {
+      "hour": "2026-09-29 15",
+      "actual": 7171.0,
+      "predicted": 7070.1
+    },
+    {
+      "hour": "2026-09-29 16",
+      "actual": 7343.0,
+      "predicted": 7470.8
+    },
+    {
+      "hour": "2026-09-29 17",
+      "actual": 8991.0,
+      "predicted": 8622.6
+    },
+    {
+      "hour": "2026-09-29 18",
+      "actual": 9514.0,
+      "predicted": 8815.4
+    },
+    {
+      "hour": "2026-09-29 19",
+      "actual": 8639.0,
+      "predicted": 7996.8
+    },
+    {
+      "hour": "2026-09-29 20",
+      "actual": 8774.0,
+      "predicted": 7931.4
+    },
+    {
+      "hour": "2026-09-29 21",
+      "actual": 9479.0,
+      "predicted": 8303.3
+    },
+    {
+      "hour": "2026-09-29 22",
+      "actual": 8113.0,
+      "predicted": 7315.3
+    },
+    {
+      "hour": "2026-09-29 23",
+      "actual": 5424.0,
+      "predicted": 5104.6
+    },
+    {
+      "hour": "2026-09-30 00",
+      "actual": 3128.0,
+      "predicted": 2663.0
+    },
+    {
+      "hour": "2026-09-30 01",
+      "actual": 1267.0,
+      "predicted": 1289.6
+    },
+    {
+      "hour": "2026-09-30 02",
+      "actual": 681.0,
+      "predicted": 635.9
+    },
+    {
+      "hour": "2026-09-30 03",
+      "actual": 456.0,
+      "predicted": 428.0
+    },
+    {
+      "hour": "2026-09-30 04",
+      "actual": 486.0,
+      "predicted": 491.0
+    },
+    {
+      "hour": "2026-09-30 05",
+      "actual": 1003.0,
+      "predicted": 1084.5
+    },
+    {
+      "hour": "2026-09-30 06",
+      "actual": 2422.0,
+      "predicted": 2532.8
+    },
+    {
+      "hour": "2026-09-30 07",
+      "actual": 5156.0,
+      "predicted": 5025.8
+    },
+    {
+      "hour": "2026-09-30 08",
+      "actual": 6280.0,
+      "predicted": 6357.3
+    },
+    {
+      "hour": "2026-09-30 09",
+      "actual": 5998.0,
+      "predicted": 5990.8
+    },
+    {
+      "hour": "2026-09-30 10",
+      "actual": 5502.0,
+      "predicted": 5634.4
+    },
+    {
+      "hour": "2026-09-30 11",
+      "actual": 5372.0,
+      "predicted": 5796.6
+    },
+    {
+      "hour": "2026-09-30 12",
+      "actual": 5891.0,
+      "predicted": 6117.0
+    },
+    {
+      "hour": "2026-09-30 13",
+      "actual": 6262.0,
+      "predicted": 6333.8
+    },
+    {
+      "hour": "2026-09-30 14",
+      "actual": 7289.0,
+      "predicted": 7018.2
+    },
+    {
+      "hour": "2026-09-30 15",
+      "actual": 7758.0,
+      "predicted": 7461.6
+    },
+    {
+      "hour": "2026-09-30 16",
+      "actual": 7708.0,
+      "predicted": 7793.9
+    },
+    {
+      "hour": "2026-09-30 17",
+      "actual": 9313.0,
+      "predicted": 9261.7
+    },
+    {
+      "hour": "2026-09-30 18",
+      "actual": 9683.0,
+      "predicted": 9829.5
+    },
+    {
+      "hour": "2026-09-30 19",
+      "actual": 9607.0,
+      "predicted": 9155.2
+    },
+    {
+      "hour": "2026-09-30 20",
+      "actual": 8878.0,
+      "predicted": 8981.5
+    },
+    {
+      "hour": "2026-09-30 21",
+      "actual": 9033.0,
+      "predicted": 9299.8
+    },
+    {
+      "hour": "2026-09-30 22",
+      "actual": 8351.0,
+      "predicted": 8579.9
+    },
+    {
+      "hour": "2026-09-30 23",
+      "actual": 6473.0,
+      "predicted": 6463.5
+    }
+  ],
+  "zones": [
+    {
+      "zone_id": 237,
+      "trips": 86746.0,
+      "wape": 0.1433
+    },
+    {
+      "zone_id": 236,
+      "trips": 80634.0,
+      "wape": 0.1521
+    },
+    {
+      "zone_id": 132,
+      "trips": 68204.0,
+      "wape": 0.182
+    },
+    {
+      "zone_id": 161,
+      "trips": 66125.0,
+      "wape": 0.2119
+    },
+    {
+      "zone_id": 142,
+      "trips": 58808.0,
+      "wape": 0.18
+    },
+    {
+      "zone_id": 186,
+      "trips": 55859.0,
+      "wape": 0.1735
+    },
+    {
+      "zone_id": 79,
+      "trips": 52717.0,
+      "wape": 0.1979
+    },
+    {
+      "zone_id": 68,
+      "trips": 51582.0,
+      "wape": 0.1523
+    }
+  ],
   "source": "monitor replay over realised demand"
 }

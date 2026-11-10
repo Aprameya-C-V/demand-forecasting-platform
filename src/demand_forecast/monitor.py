@@ -99,6 +99,45 @@ def metrics_report(
     )
 
 
+def hourly_series(window: object, hours: int = 72) -> list[dict[str, object]]:
+    """Actual versus predicted totals per hour, for the dashboard chart."""
+    ts = window.ts  # type: ignore[attr-defined]
+    y = window.y  # type: ignore[attr-defined]
+    y_hat = window.y_hat  # type: ignore[attr-defined]
+    buckets = ts.astype("datetime64[h]")
+    unique = np.unique(buckets)[-hours:]
+    series: list[dict[str, object]] = []
+    for hour in unique:
+        mask = buckets == hour
+        series.append(
+            {
+                "hour": str(hour).replace("T", " "),
+                "actual": round(float(y[mask].sum()), 1),
+                "predicted": round(float(y_hat[mask].sum()), 1),
+            }
+        )
+    return series
+
+
+def zone_breakdown(window: object, limit: int = 8) -> list[dict[str, object]]:
+    """Per zone accuracy over the window, busiest zones first."""
+    zone = window.zone  # type: ignore[attr-defined]
+    y = window.y  # type: ignore[attr-defined]
+    y_hat = window.y_hat  # type: ignore[attr-defined]
+    rows: list[dict[str, object]] = []
+    for zone_id in np.unique(zone):
+        mask = zone == zone_id
+        rows.append(
+            {
+                "zone_id": int(zone_id),
+                "trips": round(float(y[mask].sum()), 1),
+                "wape": round(float(wape(y[mask], y_hat[mask])), 4),
+            }
+        )
+    rows.sort(key=lambda row: float(row["trips"]), reverse=True)  # type: ignore[arg-type]
+    return rows[:limit]
+
+
 def monitor(
     *,
     model_version: str,

@@ -23,7 +23,7 @@ The model is not the interesting part. The platform around it is:
 | Validate | Dense zone-slot panel contract; a missing slot fails the run | `forecast panel` |
 | Train | Time split, point model plus p10/p90 quantiles, early stopping | `forecast train` |
 | Gate | Challenger replaces production only if WAPE improves by 2% | `ModelRegistry.should_promote` |
-| Serve | Health, readiness, model metadata, forecasts, Prometheus metrics | `forecast serve` |
+| Serve | Health, readiness, model metadata, single and batch forecasts, Prometheus metrics, JSON access logs | `forecast serve` |
 | Monitor | WAPE, bias and PSI on realised demand; breach opens an issue | `forecast monitor` |
 
 ## Results
@@ -38,6 +38,8 @@ Held out window 17 to 30 September 2026 (176,736 zone-slot rows), one run per co
 | Bias | -2.5% |
 | p10-p90 coverage | 0.794 (nominal 0.80) |
 | Max PSI vs training reference | 0.017 |
+| p50 / p99 latency, one client | 3.1 ms / 4.3 ms |
+| Throughput, four concurrent clients | 570 req/s |
 
 Error varies by hour: 17.6% in the evening peak, 44.4% at 04:00 where volume is small. The
 dashboard carries the hourly profile.
@@ -90,19 +92,41 @@ curl localhost:8000/v1/model
 curl "localhost:8000/v1/zones/161/forecast?slots=48"
 curl -X POST localhost:8000/v1/forecast -H 'content-type: application/json' \
      -d '{"zone_id":132,"slots":8,"quantiles":true}'
+curl -X POST localhost:8000/v1/forecast/batch -H 'content-type: application/json' \
+     -d '{"slots":48,"quantiles":false}'
 curl localhost:8000/metrics
 ```
+
+Every response carries `X-Request-ID`, `X-Model-Version` and `Server-Timing`. The access log is
+one JSON object per request with the same fields, so a dashboard or an A/B router can split on the
+model version without parsing the body.
 
 | Endpoint | Purpose |
 |---|---|
 | `GET /healthz` | liveness, no dependencies |
 | `GET /readyz` | readiness: model and feature store loaded |
 | `GET /v1/model` | version, alias, metrics, feature list, data window |
-| `GET/POST /v1/forecast` | zone forecast, p50 with optional p10/p90 band |
-| `GET /metrics` | Prometheus counters, latency histogram, model gauge |
+| `POST /v1/forecast` | zone forecast, p50 with optional p10/p90 band |
+| `POST /v1/forecast/batch` | up to 263 zones in one call, for the nightly batch |
+| `GET /v1/zones` | zones covered by the feature store |
+| `GET /metrics` | Prometheus counters, latency and batch size histograms |
 
 Forecasts are one day ahead: the feature store ends at the last published month and the API
 answers for the slots after it. A `start` outside that window is a 422, an unknown zone is a 404.
+
+Scale out with `DF_WORKERS=4` or by running more replicas; the container stays stateless.
+
+## Load test
+
+```bash
+uv run forecast serve &
+python scripts/loadtest.py --requests 2000 --concurrency 20
+```
+
+Measured on an M-series Mac with one worker, three runs: 3.1 ms p50 and 4.3 ms p99 at one client,
+570 req/s at four concurrent clients. At twenty concurrent clients the single process saturates and
+p99 rises to about 300 ms, which is the argument for `DF_WORKERS` and replicas rather than a faster
+model. Rerun the script before quoting these; they are machine specific.
 
 ## Repository layout
 
@@ -122,7 +146,7 @@ src/demand_forecast/
   cli.py             fetch, panel, train, monitor, serve, pipeline
 configs/base.yaml    months, split, model params, gates and thresholds
 docs/                project page, dashboard, runbook, model card, data card
-tests/               46 tests: contracts, features, gate, API, monitoring
+tests/               66 tests: contracts, features, gate, API, CLI, monitoring
 .github/workflows/   ci, train, monitor, container
 ```
 
@@ -130,10 +154,11 @@ tests/               46 tests: contracts, features, gate, API, monitoring
 
 | Workflow | Trigger | Does |
 |---|---|---|
-| `ci.yml` | push, pull request | ruff, mypy strict, pytest, pipeline smoke test on a small month |
+| `ci.yml` | push, pull request | ruff, format, mypy strict, pytest with an 85% coverage gate, dependency audit, pipeline smoke test on two real months |
 | `train.yml` | monthly schedule, manual | fetch, panel, train, register, promote, upload artefacts, commit dashboard data |
 | `monitor.yml` | daily schedule, manual | replay recent demand, fail on a gate breach, open or update an issue |
 | `container.yml` | tag, manual | build the image, smoke test the container, publish to GHCR |
+| `codeql.yml` | push, weekly | static security analysis |
 
 ## Design notes
 
@@ -157,3 +182,5 @@ model and the data.
 - Single day horizon. Multi day forecasts would need recursive or direct multi horizon models.
 - Cost of serving is not measured; the container is sized for a small CPU instance.
 - The drift reference is frozen at training time, so a long lived model needs a refresh policy.
+- Throughput figures are from one machine, not a benchmark harness. They show the shape of the
+  curve, not a capacity plan.

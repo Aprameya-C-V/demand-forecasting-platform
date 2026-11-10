@@ -168,4 +168,3 @@ def build_matrix(
         zone_ids=zone_ids,
         last_ts=np.datetime64(str(last_ts)).astype("datetime64[us]").astype(datetime),
     )
-

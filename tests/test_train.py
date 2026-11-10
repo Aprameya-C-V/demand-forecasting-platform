@@ -24,7 +24,9 @@ def _panel(days: int = 40, zones: int = 2) -> pl.DataFrame:
         for day in range(days)
         for slot in range(SLOTS)
     ]
-    return pl.DataFrame(rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32})
+    return pl.DataFrame(
+        rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32}
+    )
 
 
 def _config() -> PipelineConfig:
@@ -41,7 +43,9 @@ def _config() -> PipelineConfig:
 
 
 def test_split_masks_are_ordered_and_disjoint() -> None:
-    ts = np.arange(np.datetime64("2026-01-01"), np.datetime64("2026-01-21")).astype("datetime64[us]")
+    ts = np.arange(np.datetime64("2026-01-01"), np.datetime64("2026-01-21")).astype(
+        "datetime64[us]"
+    )
     train_mask, validation_mask, test_mask = split_masks(ts, validation_days=5, test_days=5)
     assert not (train_mask & validation_mask).any()
     assert not (validation_mask & test_mask).any()
@@ -51,7 +55,9 @@ def test_split_masks_are_ordered_and_disjoint() -> None:
 
 
 def test_split_rejects_a_window_that_is_too_short() -> None:
-    ts = np.arange(np.datetime64("2026-01-01"), np.datetime64("2026-01-06")).astype("datetime64[us]")
+    ts = np.arange(np.datetime64("2026-01-01"), np.datetime64("2026-01-06")).astype(
+        "datetime64[us]"
+    )
     try:
         split_masks(ts, validation_days=7, test_days=7)
     except ValueError as exc:

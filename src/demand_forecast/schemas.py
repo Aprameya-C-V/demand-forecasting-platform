@@ -13,7 +13,8 @@ class ForecastRequest(BaseModel):
 
     zone_id: int = Field(ge=1, le=263, description="TLC pickup zone id")
     start: datetime | None = Field(
-        default=None, description="First slot to forecast. Defaults to the next slot after the data."
+        default=None,
+        description="First slot to forecast. Defaults to the next slot after the data.",
     )
     slots: int = Field(default=48, ge=1, le=48 * 7, description="Number of 30 minute slots")
     quantiles: bool = Field(default=True, description="Include the p10 and p90 bands")
@@ -32,6 +33,33 @@ class ForecastResponse(BaseModel):
     generated_at: datetime
     latency_ms: float
     points: list[ForecastPoint]
+
+
+class ZoneForecast(BaseModel):
+    zone_id: int
+    points: list[ForecastPoint]
+
+
+class BatchForecastRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    zone_ids: list[int] | None = Field(
+        default=None,
+        max_length=263,
+        description="Zones to forecast. Omit for every zone in the feature store.",
+    )
+    slots: int = Field(default=48, ge=1, le=48)
+    start: datetime | None = None
+    quantiles: bool = Field(default=False)
+
+
+class BatchForecastResponse(BaseModel):
+    model_version: str
+    generated_at: datetime
+    latency_ms: float
+    zones: int
+    points: int
+    forecasts: list[ZoneForecast]
 
 
 class ModelInfo(BaseModel):

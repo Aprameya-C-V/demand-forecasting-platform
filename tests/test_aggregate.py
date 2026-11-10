@@ -43,7 +43,11 @@ def test_aggregate_month_counts_real_pickups(tmp_path) -> None:
     from demand_forecast.config import DataConfig
     from demand_forecast.data.aggregate import aggregate_month
 
-    timestamps = [datetime(2026, 3, 1, 0, 5), datetime(2026, 3, 1, 0, 20), datetime(2026, 3, 1, 0, 45)]
+    timestamps = [
+        datetime(2026, 3, 1, 0, 5),
+        datetime(2026, 3, 1, 0, 20),
+        datetime(2026, 3, 1, 0, 45),
+    ]
     frame = pl.DataFrame(
         {
             "tpep_pickup_datetime": timestamps,
@@ -57,7 +61,9 @@ def test_aggregate_month_counts_real_pickups(tmp_path) -> None:
     panel = aggregate_month(path, "2026-03", cfg)
 
     assert panel.height == 2 * 31 * 48
-    first_slot = panel.filter((pl.col("zone_id") == 1) & (pl.col("ts") == datetime(2026, 3, 1, 0, 0)))
+    first_slot = panel.filter(
+        (pl.col("zone_id") == 1) & (pl.col("ts") == datetime(2026, 3, 1, 0, 0))
+    )
     assert first_slot["trips"].item() == 2
     # the out of range zone is dropped, not counted anywhere
     assert panel["trips"].sum() == 2

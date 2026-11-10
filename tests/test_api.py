@@ -13,11 +13,16 @@ class FakeVersion:
     version = "v-test"
 
 
+class FakeMatrix:
+    zone_ids = __import__("numpy").array([1, 2, 161])
+
+
 class FakePredictor:
     version = FakeVersion()
     data_through = datetime(2026, 1, 31, 23, 30)
     forecast_start = datetime(2026, 2, 1)
     forecast_end = datetime(2026, 2, 1, 23, 30)
+    matrix = FakeMatrix()
 
     def model_info(self) -> ModelInfo:
         return ModelInfo(
@@ -29,8 +34,29 @@ class FakePredictor:
             data_window={"train_start": "2026-01-01", "train_end": "2026-01-31"},
         )
 
+    def forecast_many(
+        self,
+        *,
+        zone_ids: list[int] | None = None,
+        slots: int = 48,
+        start: datetime | None = None,
+        quantiles: bool = True,
+    ) -> dict[int, list[ForecastPoint]]:
+        selected = zone_ids or [int(zone) for zone in self.matrix.zone_ids]
+        if len(selected) > 263:
+            raise ValueError("at most 50 zones per batch request")
+        return {
+            zone: self.forecast(zone_id=zone, slots=slots, start=start, quantiles=quantiles)
+            for zone in selected
+        }
+
     def forecast(
-        self, *, zone_id: int, slots: int = 48, start: datetime | None = None, quantiles: bool = True
+        self,
+        *,
+        zone_id: int,
+        slots: int = 48,
+        start: datetime | None = None,
+        quantiles: bool = True,
     ) -> list[ForecastPoint]:
         if zone_id == 404:
             raise LookupError(f"unknown zone {zone_id}")
@@ -111,6 +137,48 @@ def test_predictions_are_logged(client: TestClient, tmp_path) -> None:
     assert len(lines) == 1
     assert '"zone_id": 161' in lines[0]
     assert '"latency_ms"' in lines[0]
+
+
+def test_zones_endpoint_lists_the_feature_store(client: TestClient) -> None:
+    assert client.get("/v1/zones").json() == [1, 2, 161]
+
+
+def test_batch_forecast_returns_every_zone(client: TestClient) -> None:
+    body = client.post("/v1/forecast/batch", json={"slots": 4, "quantiles": False}).json()
+    assert body["zones"] == 3
+    assert body["points"] == 12
+    assert [zone["zone_id"] for zone in body["forecasts"]] == [1, 2, 161]
+
+
+def test_batch_rejects_more_than_the_zone_cap(client: TestClient) -> None:
+    response = client.post("/v1/forecast/batch", json={"zone_ids": list(range(1, 265))})
+    assert response.status_code == 422
+
+
+def test_batch_unknown_zone_is_not_found(client: TestClient) -> None:
+    response = client.post("/v1/forecast/batch", json={"zone_ids": [404]})
+    assert response.status_code == 404
+
+
+def test_responses_carry_request_and_model_headers(client: TestClient) -> None:
+    response = client.get("/healthz")
+    assert response.headers["X-Request-ID"]
+    assert response.headers["X-Model-Version"] == "v-test"
+    assert response.headers["Server-Timing"].startswith("app;dur=")
+
+
+def test_access_log_is_json(client: TestClient, caplog) -> None:
+    import logging
+
+    with caplog.at_level(logging.INFO, logger="demand_forecast.access"):
+        client.get("/v1/zones/161/forecast?slots=1")
+    assert any("request" in record.getMessage() for record in caplog.records)
+
+
+def test_root_points_at_the_docs(client: TestClient) -> None:
+    body = client.get("/").json()
+    assert body["docs"] == "/docs"
+    assert body["version"]
 
 
 def test_metrics_endpoint_exposes_prometheus(client: TestClient) -> None:

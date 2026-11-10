@@ -29,7 +29,9 @@ def month_bounds(month: str) -> tuple[datetime, datetime]:
     return start, start + timedelta(days=days)
 
 
-def slot_grid(start: datetime, end: datetime, *, slot_minutes: int, zone_min: int, zone_max: int) -> pl.DataFrame:
+def slot_grid(
+    start: datetime, end: datetime, *, slot_minutes: int, zone_min: int, zone_max: int
+) -> pl.DataFrame:
     """Every (zone, slot) pair in the half open window ``[start, end)``."""
     if end <= start:
         raise ValueError("end must be after start")
@@ -69,7 +71,9 @@ def aggregate_month(path: Path, month: str, cfg: DataConfig) -> pl.DataFrame:
         .with_columns(pl.col("trips").cast(pl.Int32))
         .collect()
     )
-    grid = slot_grid(start, end, slot_minutes=cfg.slot_minutes, zone_min=cfg.zone_min, zone_max=cfg.zone_max)
+    grid = slot_grid(
+        start, end, slot_minutes=cfg.slot_minutes, zone_min=cfg.zone_min, zone_max=cfg.zone_max
+    )
     return densify(counts, grid)
 
 
@@ -78,9 +82,7 @@ def build_panel(raw_dir: Path, cfg: DataConfig, *, months: list[str] | None = No
     from demand_forecast.data.fetch import trip_file_name
 
     selected = months or cfg.months
-    frames = [
-        aggregate_month(raw_dir / trip_file_name(month), month, cfg) for month in selected
-    ]
+    frames = [aggregate_month(raw_dir / trip_file_name(month), month, cfg) for month in selected]
     panel = pl.concat(frames).sort(["zone_id", "ts"])
     return panel.with_columns(
         pl.col("ts").cast(PANEL_SCHEMA["ts"]),

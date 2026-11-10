@@ -15,11 +15,17 @@ CFG = DataConfig(months=["2026-01"], base_url="", zone_lookup_url="", zone_max=2
 
 def _panel(days: int = 2, zones: int = 2) -> pl.DataFrame:
     rows = [
-        {"ts": datetime(2026, 1, 5) + __import__("datetime").timedelta(minutes=30 * slot), "zone_id": zone, "trips": slot}
+        {
+            "ts": datetime(2026, 1, 5) + __import__("datetime").timedelta(minutes=30 * slot),
+            "zone_id": zone,
+            "trips": slot,
+        }
         for zone in range(1, zones + 1)
         for slot in range(days * 48)
     ]
-    return pl.DataFrame(rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32})
+    return pl.DataFrame(
+        rows, schema={"ts": pl.Datetime("us"), "zone_id": pl.Int16, "trips": pl.Int32}
+    )
 
 
 def test_dense_panel_passes() -> None:
@@ -79,7 +85,8 @@ def test_classify_thresholds() -> None:
 
 def test_metrics_report_reports_by_hour() -> None:
     ts = np.array(
-        [np.datetime64("2026-01-01T00:00"), np.datetime64("2026-01-01T00:30")], dtype="datetime64[us]"
+        [np.datetime64("2026-01-01T00:00"), np.datetime64("2026-01-01T00:30")],
+        dtype="datetime64[us]",
     )
     report = metrics_report(ts, np.array([1.0, 2.0]), np.array([1.0, 1.0]))
     assert report.rows == 2
@@ -88,13 +95,19 @@ def test_metrics_report_reports_by_hour() -> None:
 
 
 def test_monitor_flags_a_regression() -> None:
-    ts = np.arange(np.datetime64("2026-01-01"), np.datetime64("2026-01-01") + np.timedelta64(10, "h"), np.timedelta64(1, "h"))
+    ts = np.arange(
+        np.datetime64("2026-01-01"),
+        np.datetime64("2026-01-01") + np.timedelta64(10, "h"),
+        np.timedelta64(1, "h"),
+    )
     good = metrics_report(ts, np.ones(10), np.ones(10))
     drift = drift_report({}, {}, threshold=0.2, reference_window="a", current_window="b")
     clean = monitor(model_version="v1", metrics=good, drift=drift, cfg=MonitoringConfig(min_rows=1))
     assert clean.passed
 
     bad = metrics_report(ts, np.full(10, 10.0), np.ones(10))
-    flagged = monitor(model_version="v1", metrics=bad, drift=drift, cfg=MonitoringConfig(min_rows=1))
+    flagged = monitor(
+        model_version="v1", metrics=bad, drift=drift, cfg=MonitoringConfig(min_rows=1)
+    )
     assert not flagged.passed
     assert any("WAPE" in alert for alert in flagged.alerts)
