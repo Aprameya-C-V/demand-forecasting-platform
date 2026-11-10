@@ -1,0 +1,123 @@
+name: monitor
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenMP for LightGBM
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv sync --frozen
+
+      - name: Restore panel and registry
+        id: artefacts
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/raw
+            data/processed
+            models
+          key: monitor-${{ hashFiles('configs/base.yaml') }}
+
+      - name: Bootstrap when the cache is empty
+        if: steps.artefacts.outputs.cache-hit != 'true'
+        run: |
+          uv run forecast fetch
+          uv run forecast panel
+          uv run forecast train
+
+      - name: Monitor realised demand
+        run: uv run forecast monitor --exit-zero
+
+      - name: Save panel and registry for the next run
+        if: steps.artefacts.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: monitor-${{ hashFiles('configs/base.yaml') }}
+          path: |
+            data/raw
+            data/processed
+            models
+
+      - name: Report
+        run: cat reports/monitor.json
+
+      - name: Open or update an issue on a breach
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY' > /tmp/monitor_issue.md
+          import json, os
+          from pathlib import Path
+
+          path = Path("reports/monitor.json")
+          if not path.exists():
+              print("no monitor report produced")
+              raise SystemExit(0)
+          report = json.loads(path.read_text())
+          if report["passed"]:
+              print("PASSED")
+              raise SystemExit(0)
+          print("A monitoring gate is failing on the current production model.\n")
+          print("| Gate | Value |\n|---|---|")
+          for alert in report["alerts"]:
+              print(f"| alert | {alert} |")
+          metrics = report["metrics"]
+          print(f"\nWAPE {metrics['wape']:.3f} · MAE {metrics['mae']:.2f} · "
+                f"bias {metrics['bias']:+.3f} · rows {metrics['rows']}")
+          print(f"\nModel version: `{report['model_version']}`")
+          print(f"Window: {metrics['window_start']} to {metrics['window_end']}")
+          print("\nRunbook: docs/RUNBOOK.md, section 2.")
+          PY
+          if grep -q PASSED /tmp/monitor_issue.md; then
+            echo "monitor passed, no issue"
+            exit 0
+          fi
+          existing=$(gh issue list --state open --search "Monitor breach in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file /tmp/monitor_issue.md
+          else
+            gh issue create --title "Monitor breach: $(date -u +%Y-%m-%d)" --body-file /tmp/monitor_issue.md
+          fi
+
+      - name: Fail the workflow on a breach
+        run: |
+          python - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          report = json.loads(Path("reports/monitor.json").read_text())
+          if not report["passed"]:
+              print("monitor gates failed:", "; ".join(report["alerts"]))
+              sys.exit(1)
+          print("monitor gates passed")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: monitor-report-${{ github.run_id }}
+          path: reports/monitor.json
+          retention-days: 30

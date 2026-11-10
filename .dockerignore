@@ -1,0 +1,16 @@
+# ---- data ----
+data/
+# ---- artefacts ----
+models/
+reports/
+site/
+# ---- envs ----
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.git/
+.github/
+tests/
+docs/architecture.png

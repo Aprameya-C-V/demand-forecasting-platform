@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-11-10T19:17:53+00:00",
+  "model": {
+    "version": "20261110-190926-4b2fbdb99ff3",
+    "alias": "production",
+    "trained_at": "2026-11-10T19:10:58Z",
+    "metrics": {
+      "mae": 2.31986300097597,
+      "rmse": 6.9248317982268395,
+      "wape": 0.21796153772245272,
+      "bias": -0.02497006361463919,
+      "rows": 176736.0,
+      "coverage_p10_p90": 0.7936187307622669,
+      "pinball_lower": 0.47882517118055995,
+      "pinball_upper": 0.6083406105830428
+    },
+    "features": [
+      "zone_id",
+      "hour",
+      "dow",
+      "slot",
+      "is_weekend",
+      "lag_1d",
+      "lag_7d",
+      "roll_7d_slot",
+      "roll_7d_zone"
+    ],
+    "data_window": {
+      "train_start": "2026-05-08T00:00:00.000000",
+      "train_end": "2026-08-27T00:00:00.000000",
+      "validation_start": "2026-08-27T00:00:00.000000",
+      "validation_end": "2026-09-17T00:00:00.000000",
+      "test_start": "2026-09-17T00:00:00.000000",
+      "test_end": "2026-09-30T23:30:00.000000"
+    }
+  },
+  "report": {
+    "generated_at": "2026-11-10T19:17:53.859447Z",
+    "model_version": "20261110-190926-4b2fbdb99ff3",
+    "metrics": {
+      "window_start": "2026-09-17T00:00:00Z",
+      "window_end": "2026-09-30T23:30:00Z",
+      "rows": 176736,
+      "wape": 0.218,
+      "mae": 2.3199,
+      "rmse": 6.9248,
+      "bias": -0.025,
+      "coverage_p10_p90": 0.7936,
+      "by_hour": {
+        "0": 0.2654,
+        "1": 0.2978,
+        "2": 0.3233,
+        "3": 0.375,
+        "4": 0.4442,
+        "5": 0.4248,
+        "6": 0.327,
+        "7": 0.2646,
+        "8": 0.2325,
+        "9": 0.2158,
+        "10": 0.1927,
+        "11": 0.1999,
+        "12": 0.1989,
+        "13": 0.1959,
+        "14": 0.194,
+        "15": 0.1927,
+        "16": 0.1863,
+        "17": 0.1825,
+        "18": 0.176,
+        "19": 0.1926,
+        "20": 0.1998,
+        "21": 0.2074,
+        "22": 0.2363,
+        "23": 0.255
+      }
+    },
+    "drift": {
+      "reference_window": "train up to 2026-09-17T00:00:00.000000",
+      "current_window": "last 14 days",
+      "features": [
+        {
+          "feature": "roll_7d_zone",
+          "psi": 0.0169,
+          "status": "stable"
+        },
+        {
+          "feature": "roll_7d_slot",
+          "psi": 0.0025,
+          "status": "stable"
+        },
+        {
+          "feature": "lag_7d",
+          "psi": 0.0016,
+          "status": "stable"
+        },
+        {
+          "feature": "lag_1d",
+          "psi": 0.0007,
+          "status": "stable"
+        },
+        {
+          "feature": "hour",
+          "psi": 0.0,
+          "status": "stable"
+        }
+      ],
+      "max_psi": 0.0169,
+      "status": "stable"
+    },
+    "alerts": [],
+    "passed": true
+  },
+  "source": "monitor replay over realised demand"
+}

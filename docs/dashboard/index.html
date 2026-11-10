@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Demand Forecasting: model monitoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0e1418; --panel:#151d23; --panel-2:#1b252c; --line:#243038;
+    --ink:#e8eef2; --muted:#8ba0ad; --dim:#5f7280;
+    --accent:#3ea6ff; --ok:#2fbf71; --warn:#f0a33c; --bad:#e5534b;
+    --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+  header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13px}
+  .badge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:999px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+  .dot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(47,191,113,.15)}
+  .dot.bad{background:var(--bad);box-shadow:0 0 0 3px rgba(229,83,75,.15)}
+  .grid{display:grid;gap:16px;margin-top:22px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .cols{grid-template-columns:1.35fr 1fr}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 14px;font-weight:600}
+  .kpi .v{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .kpi .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.07em}
+  .kpi .n{color:var(--dim);font-size:12px;margin-top:6px}
+  .bar-row{display:grid;grid-template-columns:52px 1fr 56px;align-items:center;gap:10px;margin:7px 0;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .track{height:9px;background:var(--panel-2);border-radius:6px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);border-radius:6px}
+  .fill.warn{background:var(--warn)}
+  .fill.bad{background:var(--bad)}
+  .val{text-align:right;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+  td.num{font-family:var(--mono);text-align:right}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-family:var(--mono)}
+  .pill.stable{background:rgba(47,191,113,.12);color:var(--ok)}
+  .pill.warning{background:rgba(240,163,60,.14);color:var(--warn)}
+  .pill.drift{background:rgba(229,83,75,.14);color:var(--bad)}
+  ul.alerts{margin:0;padding:0;list-style:none}
+  ul.alerts li{border-left:2px solid var(--bad);padding:6px 0 6px 12px;color:var(--ink);font-size:13px}
+  .empty{color:var(--ok);font-size:13px}
+  footer{margin-top:26px;color:var(--dim);font-size:12px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px}
+  code{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .spark{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:4px}
+  .spark div{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;opacity:.85}
+  .axis{display:flex;justify-content:space-between;color:var(--dim);font-size:11px;font-family:var(--mono);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Demand forecasting: model monitoring</h1>
+      <div class="sub">NYC taxi demand, zone by zone, every 30 minutes. Replayed against realised demand.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="badge"><span class="dot" id="status-dot"></span><span id="status-text">loading</span></span>
+      <span class="badge" id="model-badge">model: -</span>
+    </div>
+  </header>
+
+  <div class="grid kpis">
+    <div class="card kpi"><div class="k">WAPE</div><div class="v" id="wape">-</div><div class="n" id="wape-note">weighted absolute percentage error</div></div>
+    <div class="card kpi"><div class="k">MAE</div><div class="v" id="mae">-</div><div class="n">trips per 30 minute slot</div></div>
+    <div class="card kpi"><div class="k">Bias</div><div class="v" id="bias">-</div><div class="n">positive means over-forecast</div></div>
+    <div class="card kpi"><div class="k">Coverage p10-p90</div><div class="v" id="coverage">-</div><div class="n">share of actuals inside the band</div></div>
+  </div>
+
+  <div class="grid cols">
+    <div class="card">
+      <h2>Error by hour of day</h2>
+      <div class="spark" id="hourly"></div>
+      <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+    </div>
+    <div class="card">
+      <h2>Feature drift (PSI)</h2>
+      <div id="drift"></div>
+      <div class="sub" style="margin-top:12px;font-size:12px">PSI compares the served feature distribution against the training reference. Above 0.2 is drift.</div>
+    </div>
+  </div>
+
+  <div class="grid cols">
+    <div class="card">
+      <h2>Model</h2>
+      <table>
+        <tbody>
+          <tr><th>Version</th><td class="num" id="m-version">-</td></tr>
+          <tr><th>Alias</th><td class="num" id="m-alias">-</td></tr>
+          <tr><th>Trained at</th><td class="num" id="m-trained">-</td></tr>
+          <tr><th>Test rows</th><td class="num" id="m-rows">-</td></tr>
+          <tr><th>Window</th><td class="num" id="m-window">-</td></tr>
+          <tr><th>RMSE</th><td class="num" id="m-rmse">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Alerts</h2>
+      <ul class="alerts" id="alerts"></ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>generated <span id="generated">-</span> · source: <span id="source">-</span></span>
+    <span><a href="../index.html">project page</a> · <code>forecast monitor</code></span>
+  </footer>
+</div>
+
+<script>
+const fmt = (v, d = 3) => (v === null || v === undefined ? "n/a" : Number(v).toFixed(d));
+const pct = (v) => (v === null || v === undefined ? "n/a" : (v * 100).toFixed(1) + "%");
+
+fetch("data.json", { cache: "no-store" })
+  .then((r) => r.json())
+  .then(render)
+  .catch((err) => {
+    document.getElementById("status-text").textContent = "data.json missing";
+    document.getElementById("status-dot").classList.add("bad");
+    console.error(err);
+  });
+
+function render(data) {
+  const report = data.report || {};
+  const metrics = report.metrics || {};
+  const drift = report.drift || {};
+  const model = data.model || {};
+
+  document.getElementById("status-dot").classList.add(report.passed ? "ok" : "bad");
+  document.getElementById("status-text").textContent = report.passed ? "all checks passing" : (report.alerts || []).length + " alert(s)";
+  document.getElementById("model-badge").textContent = "model: " + (model.version || "-");
+  document.getElementById("wape").textContent = pct(metrics.wape);
+  document.getElementById("mae").textContent = fmt(metrics.mae, 2);
+  document.getElementById("bias").textContent = (metrics.bias >= 0 ? "+" : "") + pct(metrics.bias);
+  document.getElementById("coverage").textContent = pct(metrics.coverage_p10_p90);
+  document.getElementById("mae").parentElement.querySelector(".n").textContent =
+    (metrics.rows ? metrics.rows.toLocaleString() : "-") + " held out points";
+
+  const hourly = metrics.by_hour || {};
+  const values = Object.values(hourly);
+  const max = Math.max(...values, 0.001);
+  document.getElementById("hourly").innerHTML = Object.entries(hourly)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([h, v]) => {
+      const height = Math.max(2, Math.round((v / max) * 118));
+      const cls = v > max * 0.8 ? "style=\"background:var(--warn)\"" : "";
+      return `<div title="${h}:00 \u00b7 WAPE ${v}" style="height:${height}px" ${cls}></div>`;
+    })
+    .join("") || "<div class='empty'>no hourly data</div>";
+
+  const features = (drift.features || []).slice(0, 6);
+  document.getElementById("drift").innerHTML = features.length
+    ? features.map((f) => {
+        const width = Math.min(100, Math.round((f.psi / 0.3) * 100));
+        const cls = f.status === "drift" ? "bad" : f.status === "warning" ? "warn" : "";
+        return `<div class="bar-row"><span>${f.feature.replace("roll_7d_slot","r7_slot").replace("roll_7d_zone","r7_zone")}</span>
+          <div class="track"><div class="fill ${cls}" style="width:${width}%"></div></div>
+          <span class="val">${f.psi.toFixed(3)}</span></div>`;
+      }).join("")
+    : "<div class='empty'>no drift reference</div>";
+
+  document.getElementById("alerts").innerHTML = (report.alerts || []).length
+    ? report.alerts.map((a) => `<li>${a}</li>`).join("")
+    : "<li class='empty'>No threshold breached: WAPE, bias and PSI are inside their gates.</li>";
+
+  document.getElementById("m-version").textContent = model.version || "-";
+  document.getElementById("m-alias").textContent = model.alias || "-";
+  document.getElementById("m-trained").textContent = (model.trained_at || "-").slice(0, 19).replace("T", " ");
+  document.getElementById("m-rows").textContent = (metrics.rows || 0).toLocaleString();
+  const win = model.data_window || {};
+  document.getElementById("m-window").textContent = (win.train_start || "-").slice(0, 10) + " to " + (win.test_end || "-").slice(0, 10);
+  document.getElementById("m-rmse").textContent = fmt(metrics.rmse, 2);
+  document.getElementById("generated").textContent = (data.generated_at || "-").replace("T", " ").slice(0, 19);
+  document.getElementById("source").textContent = data.source || "-";
+}
+</script>
+</body>
+</html>

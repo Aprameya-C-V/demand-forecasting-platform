@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenMP for LightGBM
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check src tests
+
+      - name: Types
+        run: uv run mypy
+
+      - name: Tests
+        run: uv run pytest --cov=demand_forecast --cov-report=term-missing
+
+  pipeline-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenMP for LightGBM
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv sync --frozen
+
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: tlc-raw-${{ hashFiles('configs/ci.yaml') }}
+
+      - name: Fetch, validate, train and monitor on two months
+        env:
+          DF_DATA_DIR: data
+          DF_MODEL_DIR: models
+          DF_REPORT_DIR: reports
+          DF_DASHBOARD_DIR: reports/dashboard
+        run: uv run forecast pipeline --config configs/ci.yaml --exit-zero
+
+      - name: Show the gate decision
+        run: cat reports/train_summary.json
+
+      - name: Show the monitor report
+        run: cat reports/monitor.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artefacts
+          path: |
+            reports/*.json
+            reports/dashboard/data.json
+          retention-days: 7

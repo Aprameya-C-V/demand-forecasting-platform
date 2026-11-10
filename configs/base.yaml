@@ -1,0 +1,48 @@
+data:
+  # Complete months published by the NYC TLC. 2026-10 is not published yet, so the
+  # panel ends at 2026-09.
+  months:
+    - "2026-05"
+    - "2026-06"
+    - "2026-07"
+    - "2026-08"
+    - "2026-09"
+  base_url: "https://d37ci6vzurychx.cloudfront.net/trip-data"
+  zone_lookup_url: "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+  slot_minutes: 30
+  zone_min: 1
+  zone_max: 263
+
+split:
+  # The last `test_days` of the panel are held out. The window before that is used
+  # for early stopping. Everything earlier is training data.
+  validation_days: 21
+  test_days: 14
+
+model:
+  objective: "poisson"
+  quantiles: [0.1, 0.9]
+  params:
+    n_estimators: 1200
+    learning_rate: 0.05
+    num_leaves: 96
+    min_data_in_leaf: 40
+    feature_fraction: 0.9
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+    num_threads: 0
+    verbosity: -1
+  early_stopping_rounds: 50
+
+registry:
+  # A challenger replaces production only if it beats it by this relative margin.
+  min_improvement: 0.02
+  alias: "production"
+
+monitoring:
+  # Breaches raise an alert and open a GitHub issue from the scheduled workflow.
+  wape_threshold: 0.38
+  bias_threshold: 0.10
+  psi_threshold: 0.20
+  min_rows: 2000

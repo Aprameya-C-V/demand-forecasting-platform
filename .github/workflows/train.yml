@@ -1,0 +1,96 @@
+name: train
+
+on:
+  schedule:
+    # monthly, after the TLC usually publishes the previous month
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      force_promote:
+        description: "Promote the challenger even if it does not beat the champion"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: train
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenMP for LightGBM
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - run: uv sync --frozen
+
+      - name: Restore raw downloads and registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            models
+          key: train-${{ github.run_id }}
+          restore-keys: |
+            train-
+
+      - name: Fetch published months
+        run: uv run forecast fetch
+
+      - name: Build and validate the panel
+        run: uv run forecast panel
+
+      - name: Train and gate the challenger
+        run: |
+          flag=""
+          if [ "${{ inputs.force_promote }}" = "true" ]; then flag="--force-promote"; fi
+          uv run forecast train $flag
+
+      - name: Monitor and refresh dashboard data
+        run: uv run forecast monitor --exit-zero
+
+      - name: Job summary
+        run: |
+          {
+            echo "## Training run"
+            echo '```json'
+            cat reports/train_summary.json
+            echo '```'
+            echo "## Monitoring"
+            echo '```json'
+            cat reports/monitor.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: train-artefacts-${{ github.run_id }}
+          path: |
+            reports/*.json
+            models/registry.json
+            models/aliases.json
+          retention-days: 30
+
+      - name: Commit the dashboard payload
+        run: |
+          if git diff --quiet -- docs/dashboard/data.json; then
+            echo "dashboard data unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/dashboard/data.json
+          git commit -m "chore: refresh dashboard data [skip ci]"
+          git push

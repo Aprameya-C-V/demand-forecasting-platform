@@ -1,0 +1,21 @@
+# data
+data/raw/
+data/processed/
+data/interim/
+# models and reports are build artefacts, produced by the pipelines
+models/
+reports/
+site/
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+# local config
+.env
+# os
+.DS_Store

@@ -1,0 +1,39 @@
+data:
+  months:
+    - "2026-08"
+    - "2026-09"
+  base_url: "https://d37ci6vzurychx.cloudfront.net/trip-data"
+  zone_lookup_url: "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+  slot_minutes: 30
+  zone_min: 1
+  zone_max: 263
+
+split:
+  validation_days: 10
+  test_days: 7
+
+model:
+  objective: "poisson"
+  quantiles: [0.1, 0.9]
+  params:
+    n_estimators: 150
+    learning_rate: 0.08
+    num_leaves: 48
+    min_data_in_leaf: 60
+    feature_fraction: 0.9
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+    num_threads: 2
+    verbosity: -1
+  early_stopping_rounds: 25
+
+registry:
+  min_improvement: 0.02
+  alias: "production"
+
+monitoring:
+  wape_threshold: 0.45
+  bias_threshold: 0.15
+  psi_threshold: 0.20
+  min_rows: 1000
