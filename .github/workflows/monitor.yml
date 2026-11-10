@@ -115,7 +115,7 @@ jobs:
           print("monitor gates passed")
           PY
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: monitor-report-${{ github.run_id }}
